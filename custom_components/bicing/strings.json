@@ -1,0 +1,29 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "host": "[%key:common::config_flow::step::data::host%]",
+          "username": "[%key:common::config_flow::step::data::username%]",
+          "password": "[%key:common::config_flow::step::data::password%]"
+        }
+      },
+      "reauth_confirm": {
+        "title": "[%key:common::config_flow::step::reauth_confirm::title%]",
+        "description": "[%key:common::config_flow::step::reauth_confirm::description%]"
+      }
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "status_error": "[%key:common::config_flow::abort::status_error%]",
+      "data_updated": "[%key:common::config_flow::abort::data_updated%]",
+      "token_error": "[%key:common::config_flow::abort::token_error%]",
+      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "domain": "bicing",
+  "name": "Estat del Bicing",
+  "codeowners": ["@osanchezdm"],
+  "config_flow": true,
+  "documentation": "https://github.com/oscarsanchezdm/bicing-hassio",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/oscarsanchezdm/bicing-hassio/issues",
+  "requirements": [],
+  "version": "0.3"
+}

@@ -1,0 +1,49 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "La integració ja s'ha configurat",
+      "status_error": "S'ha produït un error comunicant-se amb el servidor.",
+      "token_error": "S'ha produït un error comunicant amb l'API del Bicing. Revisar si el token és vàlid.",
+      "reauth_successful": "El token és vàlid.",
+      "data_updated": "S'han desat les estacions a monitoritzar."
+    },
+    "error": {
+      "cannot_connect": "No s'ha pogut connectar",
+      "invalid_auth": "Autenticació invàlida",
+      "unknown": "Error inesperat"
+    },
+    "step": {
+      "user": {
+        "title": "Token de l'API",
+        "data": {
+          "token": "Obteniu-lo a https://opendata-ajuntament.barcelona.cat/tokens"
+        }
+      },
+      "token": {
+        "title": "Token de l'API",
+        "data": {
+          "token": "Obteniu-lo a https://opendata-ajuntament.barcelona.cat/tokens"
+        }
+      },
+      "station": {
+        "title": "Estacions monitoritzades",
+        "data": {
+          "station_ids": "Seleccioneu les estacions a monitoritzar"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reconfigurar el token",
+        "description": "El token ha caducat i cal que en genereu un de nou. Podeu fer-ho des de https://opendata-ajuntament.barcelona.cat/tokens",
+        "data": {
+          "token": "Obteniu-lo a https://opendata-ajuntament.barcelona.cat/tokens"
+        }
+      },
+      "reconfigure": {
+        "title": "Estacions monitoritzades",
+        "data": {
+          "station_ids": "Seleccioneu les estacions a monitoritzar"
+        }
+      }
+    }
+  }
+}
