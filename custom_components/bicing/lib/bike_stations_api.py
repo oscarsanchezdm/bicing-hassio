@@ -29,9 +29,6 @@ class BikeStationApi:
         
         if response.status != 200:
             raise aiohttp.ServerConnectionError("El servidor no ha contestat un codi 200/OK")
-        
-        if response.headers.get('content-type') != 'application/json':
-            raise aiohttp.ContentTypeError("La resposta no és un JSON")
 
         json = await response.json()
         await session.close()
@@ -56,9 +53,6 @@ class BikeStationApi:
 
         if response.status != 200:
             raise aiohttp.ServerConnectionError("El servidor no ha contestat un codi 200/OK")
-        
-        if response.headers.get('content-type') != 'application/json':
-            raise aiohttp.ContentTypeError("La resposta no és un JSON")
             
         json = await response.json()
         await session.close()
@@ -84,9 +78,6 @@ class BikeStationApi:
 
         if response.status != 200:
             raise aiohttp.ServerConnectionError("El servidor no ha contestat un codi 200/OK")
-        
-        if response.headers.get('content-type') != 'application/json':
-            raise aiohttp.ContentTypeError("La resposta no és un JSON")
 
         json = await response.json()
         await session.close()
