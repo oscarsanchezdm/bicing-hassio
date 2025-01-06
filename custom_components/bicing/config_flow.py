@@ -69,6 +69,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="token_error")        
         except aiohttp.ServerConnectionError as exc:
             return self.async_abort(reason="status_error")
+        except aiohttp.ClientConnectionError as exc:
+            return self.async_abort(reason="client_error")
                 
         options = list(map(lambda p: SelectOptionDict(label=str(p.id) + " - " + p.name, value=str(p.id)), stations))
 
@@ -159,6 +161,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="token_error")      
         except aiohttp.ServerConnectionError as exc:
             return self.async_abort(reason="status_error")
+        except aiohttp.ClientConnectionError as exc:
+            return self.async_abort(reason="client_error")
         
         options = list(map(lambda p: SelectOptionDict(label=str(p.id) + " - " + p.name, value=str(p.id)), stations))
 

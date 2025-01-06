@@ -73,11 +73,19 @@ class BicingStationCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         try:
             status = await BikeStationApi.get_stations_status(self._token, self._stations)
+        
         except aiohttp.ContentTypeError as exc: #token error
+            _LOGGER.error("Error connectant-se amb l'API del Bicing. El token podria ser invàlid (Content-Type inesperat).")
             raise ConfigEntryAuthFailed("Error connectant-se amb l'API del Bicing. El token podria ser invàlid.") from exc
+        
         except aiohttp.ServerConnectionError as exc:
             _LOGGER.error("Error connectant-se amb l'API del Bicing.")
             return
+        
+        except aiohttp.ClientConnectionError as exc:
+            _LOGGER.error("Error connectant-se amb l'API del Bicing. Error del client (certificats,etc.)")
+            return
+        
         
         _LOGGER.debug(f"Bulk update={status}")
         return status
