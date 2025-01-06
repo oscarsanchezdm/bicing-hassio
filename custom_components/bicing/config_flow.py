@@ -141,7 +141,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             entity_entries = async_entries_for_config_entry(entity_registry, self.config_entry.entry_id)
 
             entities_to_remove = []
-            _LOGGER.error(entity_entries)
 
             for e in entity_entries:
                 entity = self.hass.states.get(e.entity_id)

@@ -44,11 +44,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             names.append(await BikeStationApi.get_station_name(token, station))
 
         except aiohttp.ContentTypeError as exc: #token error
-            _LOGGER.error("Error connectant-se amb l'API del Bicing. El token podria ser invàlid.")
+            _LOGGER.error("Error connectant-se amb l'API del Bicing. El token podria ser invàlid (Content-Type inesperat).")
             return
 
         except aiohttp.ServerConnectionError as exc:
-            _LOGGER.error("Error connectant-se amb l'API del Bicing.")
+            _LOGGER.error("Error connectant-se amb l'API del Bicing. Error de servidor")
+            return
+        
+        except aiohttp.ClientConnectionError as exc:
+            _LOGGER.error("Error connectant-se amb l'API del Bicing. Error del client (certificats,etc.)")
             return
         
         sensor = BicingStationSensor(names[-1], names[-1], station, coordinator)

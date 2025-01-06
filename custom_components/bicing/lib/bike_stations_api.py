@@ -26,10 +26,9 @@ class BikeStationApi:
         }
         session = aiohttp.ClientSession(headers=headers)
         response = await session.get(const.STATION_INFO_ENDPOINT)
-        
-        if response.status != 200:
-            raise aiohttp.ServerConnectionError("El servidor no ha contestat un codi 200/OK")
 
+        if response.headers.get('content-type') != 'application/json; charset=UTF-8':
+            raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
         json = await response.json()
         await session.close()
 
@@ -50,9 +49,9 @@ class BikeStationApi:
         }
         session = aiohttp.ClientSession(headers=headers)
         response = await session.get(const.STATION_INFO_ENDPOINT)
-
-        if response.status != 200:
-            raise aiohttp.ServerConnectionError("El servidor no ha contestat un codi 200/OK")
+        
+        if response.headers.get('content-type') != 'application/json; charset=UTF-8':
+            raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
             
         json = await response.json()
         await session.close()
@@ -75,9 +74,9 @@ class BikeStationApi:
         }
         session = aiohttp.ClientSession(headers=headers)
         response = await session.get(const.STATION_STATUS_ENDPOINT)
-
-        if response.status != 200:
-            raise aiohttp.ServerConnectionError("El servidor no ha contestat un codi 200/OK")
+      
+        if response.headers.get('content-type') != 'application/json; charset=UTF-8':
+            raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
 
         json = await response.json()
         await session.close()

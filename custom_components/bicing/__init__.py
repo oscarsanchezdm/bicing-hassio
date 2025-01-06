@@ -6,11 +6,14 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 import aiohttp
+import logging
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .lib.bike_stations_api import BikeStationApi
 
 from .const import DOMAIN, TOKEN
+
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
@@ -20,8 +23,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         stations = await BikeStationApi.get_bike_stations(entry.options.get(TOKEN, entry.data[TOKEN]))
     except aiohttp.ContentTypeError as exc: #token error
+        _LOGGER.error("Error connectant-se amb l'API del Bicing. El token podria ser invàlid (Content-Type inesperat).")
         raise ConfigEntryAuthFailed("Error connectant-se amb l'API del Bicing. El token podria ser invàlid.") from exc     
     except aiohttp.ServerConnectionError as exc:
+        _LOGGER.error("Error connectant-se amb l'API del Bicing. Error de servidor")
+        return False
+    except aiohttp.ClientConnectionError as exc:
+        _LOGGER.error("Error connectant-se amb l'API del Bicing. Error del client (certificats,etc.)")
         return False
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_update_options))
