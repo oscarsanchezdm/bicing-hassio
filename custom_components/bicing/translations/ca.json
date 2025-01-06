@@ -3,6 +3,7 @@
     "abort": {
       "already_configured": "La integració ja s'ha configurat",
       "status_error": "S'ha produït un error comunicant-se amb el servidor.",
+      "client_error": "S'ha produït un error comunicant-se amb el servidor. Error del client.",
       "token_error": "S'ha produït un error comunicant amb l'API del Bicing. Revisar si el token és vàlid.",
       "reauth_successful": "El token és vàlid.",
       "data_updated": "S'han desat les estacions a monitoritzar."

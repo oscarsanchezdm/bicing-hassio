@@ -21,6 +21,7 @@
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
       "status_error": "[%key:common::config_flow::abort::status_error%]",
+      "client_error": "[%key:common::config_flow::abort::client_error%]",
       "data_updated": "[%key:common::config_flow::abort::data_updated%]",
       "token_error": "[%key:common::config_flow::abort::token_error%]",
       "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
