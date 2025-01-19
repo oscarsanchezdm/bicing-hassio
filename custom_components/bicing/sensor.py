@@ -76,14 +76,17 @@ class BicingStationCoordinator(DataUpdateCoordinator):
         
         except aiohttp.ContentTypeError as exc: #token error
             _LOGGER.error("Error connectant-se amb l'API del Bicing. El token podria ser invàlid (Content-Type inesperat).")
+            _LOGGER.error(exc)
             raise ConfigEntryAuthFailed("Error connectant-se amb l'API del Bicing. El token podria ser invàlid.") from exc
         
         except aiohttp.ServerConnectionError as exc:
             _LOGGER.error("Error connectant-se amb l'API del Bicing.")
+            _LOGGER.error(exc)
             return
         
         except aiohttp.ClientConnectionError as exc:
             _LOGGER.error("Error connectant-se amb l'API del Bicing. Error del client (certificats,etc.)")
+            _LOGGER.error(exc)
             return
         
         

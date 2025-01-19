@@ -1,10 +1,13 @@
 from dataclasses import dataclass
+import logging
 
 import aiohttp # type: ignore
 
 import json
 
 from .. import const
+
+_LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class StationInfo:
@@ -26,6 +29,11 @@ class BikeStationApi:
         }
         session = aiohttp.ClientSession(headers=headers)
         response = await session.get(const.STATION_INFO_ENDPOINT)
+
+        # fix bug petició retornada en XML
+        if response.headers.get('content-type') == 'application/xml; charset=UTF-8':
+            _LOGGER.error("El servidor ha retornat un contingut inesperat:" + response)
+            return
 
         if response.headers.get('content-type') != 'application/json; charset=UTF-8':
             raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
@@ -49,6 +57,11 @@ class BikeStationApi:
         }
         session = aiohttp.ClientSession(headers=headers)
         response = await session.get(const.STATION_INFO_ENDPOINT)
+
+        # fix bug petició retornada en XML
+        if response.headers.get('content-type') == 'application/xml; charset=UTF-8':
+            _LOGGER.error("El servidor ha retornat un contingut inesperat:" + response)
+            return
         
         if response.headers.get('content-type') != 'application/json; charset=UTF-8':
             raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
@@ -75,6 +88,11 @@ class BikeStationApi:
         session = aiohttp.ClientSession(headers=headers)
         response = await session.get(const.STATION_STATUS_ENDPOINT)
       
+        # fix bug petició retornada en XML
+        if response.headers.get('content-type') == 'application/xml; charset=UTF-8':
+            _LOGGER.error("El servidor ha retornat un contingut inesperat:" + response)
+            return
+
         if response.headers.get('content-type') != 'application/json; charset=UTF-8':
             raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
 
