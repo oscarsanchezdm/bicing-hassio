@@ -124,6 +124,7 @@ class BicingStationSensor(CoordinatorEntity, SensorEntity):
         """Handle updated data from the coordinator."""
         data = self.coordinator.data
         if data is None:
+            _LOGGER.debug("No coordinator data available for station %s", self.id)
             return
         for d in data:
             if str(d.id)==str(self.id):
