@@ -78,8 +78,8 @@ class BikeStationApi:
         headers = {
             'Authorization': token,
         }
-        json_response = None
-        for attempt in range(1, 3):
+        max_attempts = 2
+        for attempt in range(max_attempts):
             try:
                 timeout = aiohttp.ClientTimeout(total=15)
                 async with aiohttp.ClientSession(headers=headers, timeout=timeout) as session:
@@ -89,23 +89,22 @@ class BikeStationApi:
                             _LOGGER.error("El servidor ha retornat un contingut inesperat. Status=%s, Content-Type=%s", response.status, content_type)
                             raise aiohttp.ContentTypeError(request_info=response.request_info, history=response.history, message=f"La resposta no és un JSON: {content_type}")
                         json_response = await response.json()
-                        break
+                        station_status_list = []
+
+                        for station in json_response['data']['stations']:
+                            if str(station['station_id']) in map(str, station_ids):
+                                station_status = StationStatus(
+                                    id=station['station_id'],
+                                    bikes_available=station['num_bikes_available_types']['mechanical'],
+                                    ebikes_available=station['num_bikes_available_types']['ebike'],
+                                    docks_available=station['num_docks_available']
+                                )
+                                station_status_list.append(station_status)  # Afegir el diccionari a la llista
+
+                        return station_status_list  # Tornar la llista de diccionaris
             except (aiohttp.ServerConnectionError, aiohttp.ClientConnectionError, aiohttp.ServerTimeoutError, TimeoutError):
-                if attempt == 1:
+                if attempt == max_attempts - 1:
+                    raise
+                if attempt == 0:
                     _LOGGER.warning("Error temporal obtenint l'estat de les estacions. Reintentant una vegada...")
                     continue
-                raise
-
-        station_status_list = []
-
-        for station in json_response['data']['stations']:
-            if str(station['station_id']) in map(str, station_ids):
-                station_status = StationStatus(
-                    id=station['station_id'],
-                    bikes_available=station['num_bikes_available_types']['mechanical'],
-                    ebikes_available=station['num_bikes_available_types']['ebike'],
-                    docks_available=station['num_docks_available']
-                )
-                station_status_list.append(station_status)  # Afegir el diccionari a la llista
-
-        return station_status_list  # Tornar la llista de diccionaris
