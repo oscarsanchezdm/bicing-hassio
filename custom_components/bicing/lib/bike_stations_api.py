@@ -22,7 +22,9 @@ class StationStatus:
 class BikeStationApi:
     @staticmethod
     def _is_json_content_type(content_type: str | None) -> bool:
-        return bool(content_type) and content_type.lower().startswith("application/json")
+        if not content_type:
+            return False
+        return content_type.lower().split(";", 1)[0].strip() == "application/json"
 
     @staticmethod
     async def get_bike_stations(token):

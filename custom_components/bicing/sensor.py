@@ -122,7 +122,9 @@ class BicingStationSensor(CoordinatorEntity, SensorEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        data = self.coordinator.data or []
+        data = self.coordinator.data
+        if data is None:
+            return
         for d in data:
             if str(d.id)==str(self.id):
                 self._state = (d.bikes_available + d.ebikes_available)
