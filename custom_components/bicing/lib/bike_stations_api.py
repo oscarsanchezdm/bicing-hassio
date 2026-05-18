@@ -1,9 +1,8 @@
 from dataclasses import dataclass
+import asyncio
 import logging
 
 import aiohttp # type: ignore
-
-import json
 
 from .. import const
 
@@ -23,22 +22,23 @@ class StationStatus:
 
 class BikeStationApi:
     @staticmethod
+    def _is_json_content_type(content_type: str | None) -> bool:
+        if not content_type:
+            return False
+        return content_type.lower().split(";", 1)[0].strip() == "application/json"
+
+    @staticmethod
     async def get_bike_stations(token):
         headers = {
             'Authorization': token,
         }
-        session = aiohttp.ClientSession(headers=headers)
-        response = await session.get(const.STATION_INFO_ENDPOINT)
-
-        # fix bug petició retornada en XML
-        if response.headers.get('content-type') == 'application/xml; charset=UTF-8':
-            _LOGGER.error("El servidor ha retornat un contingut inesperat:" + response)
-            return
-
-        if response.headers.get('content-type') != 'application/json; charset=UTF-8':
-            raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
-        json = await response.json()
-        await session.close()
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(const.STATION_INFO_ENDPOINT) as response:
+                content_type = response.headers.get("Content-Type")
+                if not BikeStationApi._is_json_content_type(content_type):
+                    _LOGGER.error("El servidor ha retornat un contingut inesperat. Status=%s, Content-Type=%s", response.status, content_type)
+                    raise aiohttp.ContentTypeError(request_info=response.request_info, history=response.history, message=f"La resposta no és un JSON: {content_type}")
+                json = await response.json()
 
         stations = []
         for station_data in json['data']['stations']:
@@ -55,19 +55,13 @@ class BikeStationApi:
         headers = {
             'Authorization': token,
         }
-        session = aiohttp.ClientSession(headers=headers)
-        response = await session.get(const.STATION_INFO_ENDPOINT)
-
-        # fix bug petició retornada en XML
-        if response.headers.get('content-type') == 'application/xml; charset=UTF-8':
-            _LOGGER.error("El servidor ha retornat un contingut inesperat:" + response)
-            return
-        
-        if response.headers.get('content-type') != 'application/json; charset=UTF-8':
-            raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
-            
-        json = await response.json()
-        await session.close()
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(const.STATION_INFO_ENDPOINT) as response:
+                content_type = response.headers.get("Content-Type")
+                if not BikeStationApi._is_json_content_type(content_type):
+                    _LOGGER.error("El servidor ha retornat un contingut inesperat. Status=%s, Content-Type=%s", response.status, content_type)
+                    raise aiohttp.ContentTypeError(request_info=response.request_info, history=response.history, message=f"La resposta no és un JSON: {content_type}")
+                json = await response.json()
 
         bike_station = None
         for station in json['data']['stations']:
@@ -85,30 +79,32 @@ class BikeStationApi:
         headers = {
             'Authorization': token,
         }
-        session = aiohttp.ClientSession(headers=headers)
-        response = await session.get(const.STATION_STATUS_ENDPOINT)
-      
-        # fix bug petició retornada en XML
-        if response.headers.get('content-type') == 'application/xml; charset=UTF-8':
-            _LOGGER.error("El servidor ha retornat un contingut inesperat:" + response)
-            return
+        max_attempts = 2
+        for attempt in range(max_attempts):
+            try:
+                timeout = aiohttp.ClientTimeout(total=15)
+                async with aiohttp.ClientSession(headers=headers, timeout=timeout) as session:
+                    async with session.get(const.STATION_STATUS_ENDPOINT) as response:
+                        content_type = response.headers.get("Content-Type")
+                        if not BikeStationApi._is_json_content_type(content_type):
+                            _LOGGER.error("El servidor ha retornat un contingut inesperat. Status=%s, Content-Type=%s", response.status, content_type)
+                            raise aiohttp.ContentTypeError(request_info=response.request_info, history=response.history, message=f"La resposta no és un JSON: {content_type}")
+                        json_response = await response.json()
+                        station_status_list = []
 
-        if response.headers.get('content-type') != 'application/json; charset=UTF-8':
-            raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
+                        for station in json_response['data']['stations']:
+                            if str(station['station_id']) in map(str, station_ids):
+                                station_status = StationStatus(
+                                    id=station['station_id'],
+                                    bikes_available=station['num_bikes_available_types']['mechanical'],
+                                    ebikes_available=station['num_bikes_available_types']['ebike'],
+                                    docks_available=station['num_docks_available']
+                                )
+                                station_status_list.append(station_status)  # Afegir el diccionari a la llista
 
-        json = await response.json()
-        await session.close()
-
-        station_status_list = []
-
-        for station in json['data']['stations']:
-            if str(station['station_id']) in map(str, station_ids):
-                station_status = StationStatus(
-                    id=station['station_id'],
-                    bikes_available=station['num_bikes_available_types']['mechanical'],
-                    ebikes_available=station['num_bikes_available_types']['ebike'],
-                    docks_available=station['num_docks_available']
-                )
-                station_status_list.append(station_status)  # Afegir el diccionari a la llista
-
-        return station_status_list  # Tornar la llista de diccionaris
+                        return station_status_list  # Tornar la llista de diccionaris
+            except (aiohttp.ServerConnectionError, aiohttp.ClientConnectionError, aiohttp.ServerTimeoutError, asyncio.TimeoutError) as exc:
+                if attempt == max_attempts - 1:
+                    raise
+                _LOGGER.warning("Error temporal obtenint l'estat de les estacions (%s). Reintentant una vegada...", exc)
+                await asyncio.sleep(1)
