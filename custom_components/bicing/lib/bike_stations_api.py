@@ -3,8 +3,6 @@ import logging
 
 import aiohttp # type: ignore
 
-import json
-
 from .. import const
 
 _LOGGER = logging.getLogger(__name__)
@@ -23,22 +21,21 @@ class StationStatus:
 
 class BikeStationApi:
     @staticmethod
+    def _is_json_content_type(content_type: str | None) -> bool:
+        return bool(content_type) and content_type.lower().startswith("application/json")
+
+    @staticmethod
     async def get_bike_stations(token):
         headers = {
             'Authorization': token,
         }
-        session = aiohttp.ClientSession(headers=headers)
-        response = await session.get(const.STATION_INFO_ENDPOINT)
-
-        # fix bug petició retornada en XML
-        if response.headers.get('content-type') == 'application/xml; charset=UTF-8':
-            _LOGGER.error("El servidor ha retornat un contingut inesperat:" + response)
-            return
-
-        if response.headers.get('content-type') != 'application/json; charset=UTF-8':
-            raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
-        json = await response.json()
-        await session.close()
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(const.STATION_INFO_ENDPOINT) as response:
+                content_type = response.headers.get("Content-Type")
+                if not BikeStationApi._is_json_content_type(content_type):
+                    _LOGGER.error("El servidor ha retornat un contingut inesperat. Status=%s, Content-Type=%s", response.status, content_type)
+                    raise aiohttp.ContentTypeError(request_info=response.request_info, history=response.history, message=f"La resposta no és un JSON: {content_type}")
+                json = await response.json()
 
         stations = []
         for station_data in json['data']['stations']:
@@ -55,19 +52,13 @@ class BikeStationApi:
         headers = {
             'Authorization': token,
         }
-        session = aiohttp.ClientSession(headers=headers)
-        response = await session.get(const.STATION_INFO_ENDPOINT)
-
-        # fix bug petició retornada en XML
-        if response.headers.get('content-type') == 'application/xml; charset=UTF-8':
-            _LOGGER.error("El servidor ha retornat un contingut inesperat:" + response)
-            return
-        
-        if response.headers.get('content-type') != 'application/json; charset=UTF-8':
-            raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
-            
-        json = await response.json()
-        await session.close()
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(const.STATION_INFO_ENDPOINT) as response:
+                content_type = response.headers.get("Content-Type")
+                if not BikeStationApi._is_json_content_type(content_type):
+                    _LOGGER.error("El servidor ha retornat un contingut inesperat. Status=%s, Content-Type=%s", response.status, content_type)
+                    raise aiohttp.ContentTypeError(request_info=response.request_info, history=response.history, message=f"La resposta no és un JSON: {content_type}")
+                json = await response.json()
 
         bike_station = None
         for station in json['data']['stations']:
@@ -85,19 +76,13 @@ class BikeStationApi:
         headers = {
             'Authorization': token,
         }
-        session = aiohttp.ClientSession(headers=headers)
-        response = await session.get(const.STATION_STATUS_ENDPOINT)
-      
-        # fix bug petició retornada en XML
-        if response.headers.get('content-type') == 'application/xml; charset=UTF-8':
-            _LOGGER.error("El servidor ha retornat un contingut inesperat:" + response)
-            return
-
-        if response.headers.get('content-type') != 'application/json; charset=UTF-8':
-            raise aiohttp.ContentTypeError(request_info=response.request_info,history=response.history,message=f"La resposta no és un JSON: {response.headers.get('Content-Type')}")
-
-        json = await response.json()
-        await session.close()
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(const.STATION_STATUS_ENDPOINT) as response:
+                content_type = response.headers.get("Content-Type")
+                if not BikeStationApi._is_json_content_type(content_type):
+                    _LOGGER.error("El servidor ha retornat un contingut inesperat. Status=%s, Content-Type=%s", response.status, content_type)
+                    raise aiohttp.ContentTypeError(request_info=response.request_info, history=response.history, message=f"La resposta no és un JSON: {content_type}")
+                json = await response.json()
 
         station_status_list = []
 

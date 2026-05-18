@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from datetime import timedelta
 from typing import Mapping, Any
 
@@ -15,9 +16,8 @@ import aiohttp
 from .lib.bike_stations_api import BikeStationApi, StationStatus
 
 from homeassistant.helpers.typing import StateType
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity, UpdateFailed
 
-from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.components.sensor import (
     SensorEntityDescription, SensorEntity
 )
@@ -74,20 +74,25 @@ class BicingStationCoordinator(DataUpdateCoordinator):
         try:
             status = await BikeStationApi.get_stations_status(self._token, self._stations)
         
-        except aiohttp.ContentTypeError as exc: #token error
-            _LOGGER.error("Error connectant-se amb l'API del Bicing. El token podria ser invàlid (Content-Type inesperat).")
+        except aiohttp.ContentTypeError as exc:
+            _LOGGER.error("Error connectant-se amb l'API del Bicing. El servidor ha retornat una resposta inesperada.")
             _LOGGER.error(exc)
-            raise ConfigEntryAuthFailed("Error connectant-se amb l'API del Bicing. El token podria ser invàlid.") from exc
+            raise UpdateFailed("Error temporal connectant-se amb l'API del Bicing (Content-Type inesperat).") from exc
         
         except aiohttp.ServerConnectionError as exc:
             _LOGGER.error("Error connectant-se amb l'API del Bicing.")
             _LOGGER.error(exc)
-            return
+            raise UpdateFailed("Error temporal connectant-se amb l'API del Bicing.") from exc
         
         except aiohttp.ClientConnectionError as exc:
             _LOGGER.error("Error connectant-se amb l'API del Bicing. Error del client (certificats,etc.)")
             _LOGGER.error(exc)
-            return
+            raise UpdateFailed("Error del client connectant-se amb l'API del Bicing.") from exc
+        
+        except (aiohttp.ServerTimeoutError, asyncio.TimeoutError) as exc:
+            _LOGGER.error("Error connectant-se amb l'API del Bicing. Timeout.")
+            _LOGGER.error(exc)
+            raise UpdateFailed("Timeout connectant-se amb l'API del Bicing.") from exc
         
         
         _LOGGER.debug(f"Bulk update={status}")
@@ -117,7 +122,7 @@ class BicingStationSensor(CoordinatorEntity, SensorEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        data = self.coordinator.data
+        data = self.coordinator.data or []
         for d in data:
             if str(d.id)==str(self.id):
                 self._state = (d.bikes_available + d.ebikes_available)
