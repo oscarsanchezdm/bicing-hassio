@@ -1,5 +1,4 @@
 import logging
-import asyncio
 from datetime import timedelta
 from typing import Mapping, Any
 
@@ -89,7 +88,7 @@ class BicingStationCoordinator(DataUpdateCoordinator):
             _LOGGER.error(exc)
             raise UpdateFailed("Error del client connectant-se amb l'API del Bicing.") from exc
         
-        except (aiohttp.ServerTimeoutError, asyncio.TimeoutError) as exc:
+        except (aiohttp.ServerTimeoutError, TimeoutError) as exc:
             _LOGGER.error("Error connectant-se amb l'API del Bicing. Timeout.")
             _LOGGER.error(exc)
             raise UpdateFailed("Timeout connectant-se amb l'API del Bicing.") from exc
