@@ -107,4 +107,5 @@ class BikeStationApi:
                 if attempt == max_attempts - 1:
                     raise
                 _LOGGER.warning("Error temporal obtenint l'estat de les estacions. Reintentant una vegada...")
+                await asyncio.sleep(1)
                 continue
