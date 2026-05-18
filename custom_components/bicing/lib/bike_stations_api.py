@@ -79,8 +79,7 @@ class BikeStationApi:
             'Authorization': token,
         }
         json_response = None
-        last_exception = None
-        for attempt in range(2):
+        for attempt_index in range(2):
             try:
                 timeout = aiohttp.ClientTimeout(total=15)
                 async with aiohttp.ClientSession(headers=headers, timeout=timeout) as session:
@@ -91,14 +90,13 @@ class BikeStationApi:
                             raise aiohttp.ContentTypeError(request_info=response.request_info, history=response.history, message=f"La resposta no és un JSON: {content_type}")
                         json_response = await response.json()
                         break
-            except (aiohttp.ContentTypeError, aiohttp.ServerConnectionError, aiohttp.ClientConnectionError, aiohttp.ServerTimeoutError, TimeoutError) as exc:
-                last_exception = exc
-                if attempt == 0:
+            except (aiohttp.ContentTypeError, aiohttp.ServerConnectionError, aiohttp.ClientConnectionError, aiohttp.ServerTimeoutError, TimeoutError):
+                if attempt_index == 0:
                     _LOGGER.warning("Error temporal obtenint l'estat de les estacions. Reintentant una vegada...")
                     continue
                 raise
-        if json_response is None and last_exception:
-            raise last_exception
+        if json_response is None:
+            raise RuntimeError("No s'ha pogut obtenir la resposta d'estat del Bicing.")
 
         station_status_list = []
 
