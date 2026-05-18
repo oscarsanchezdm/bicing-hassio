@@ -78,17 +78,31 @@ class BikeStationApi:
         headers = {
             'Authorization': token,
         }
-        async with aiohttp.ClientSession(headers=headers) as session:
-            async with session.get(const.STATION_STATUS_ENDPOINT) as response:
-                content_type = response.headers.get("Content-Type")
-                if not BikeStationApi._is_json_content_type(content_type):
-                    _LOGGER.error("El servidor ha retornat un contingut inesperat. Status=%s, Content-Type=%s", response.status, content_type)
-                    raise aiohttp.ContentTypeError(request_info=response.request_info, history=response.history, message=f"La resposta no és un JSON: {content_type}")
-                json = await response.json()
+        json_response = None
+        last_exception = None
+        for attempt in range(2):
+            try:
+                timeout = aiohttp.ClientTimeout(total=15)
+                async with aiohttp.ClientSession(headers=headers, timeout=timeout) as session:
+                    async with session.get(const.STATION_STATUS_ENDPOINT) as response:
+                        content_type = response.headers.get("Content-Type")
+                        if not BikeStationApi._is_json_content_type(content_type):
+                            _LOGGER.error("El servidor ha retornat un contingut inesperat. Status=%s, Content-Type=%s", response.status, content_type)
+                            raise aiohttp.ContentTypeError(request_info=response.request_info, history=response.history, message=f"La resposta no és un JSON: {content_type}")
+                        json_response = await response.json()
+                        break
+            except (aiohttp.ContentTypeError, aiohttp.ServerConnectionError, aiohttp.ClientConnectionError, aiohttp.ServerTimeoutError, TimeoutError) as exc:
+                last_exception = exc
+                if attempt == 0:
+                    _LOGGER.warning("Error temporal obtenint l'estat de les estacions. Reintentant una vegada...")
+                    continue
+                raise
+        if json_response is None and last_exception:
+            raise last_exception
 
         station_status_list = []
 
-        for station in json['data']['stations']:
+        for station in json_response['data']['stations']:
             if str(station['station_id']) in map(str, station_ids):
                 station_status = StationStatus(
                     id=station['station_id'],
