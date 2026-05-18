@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 import logging
 
@@ -102,9 +103,8 @@ class BikeStationApi:
                                 station_status_list.append(station_status)  # Afegir el diccionari a la llista
 
                         return station_status_list  # Tornar la llista de diccionaris
-            except (aiohttp.ServerConnectionError, aiohttp.ClientConnectionError, aiohttp.ServerTimeoutError, TimeoutError):
+            except (aiohttp.ServerConnectionError, aiohttp.ClientConnectionError, aiohttp.ServerTimeoutError, asyncio.TimeoutError):
                 if attempt == max_attempts - 1:
                     raise
-                if attempt == 0:
-                    _LOGGER.warning("Error temporal obtenint l'estat de les estacions. Reintentant una vegada...")
-                    continue
+                _LOGGER.warning("Error temporal obtenint l'estat de les estacions. Reintentant una vegada...")
+                continue
