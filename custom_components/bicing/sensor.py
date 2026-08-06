@@ -1,11 +1,12 @@
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Mapping, Any
 
 import json
 from .const import (
     CONF_STATION_IDS,
     UPDATE_INTERVAL,
+    STALE_DATA_TTL_HOURS,
     TOKEN,
     #CONF_SHOW_IN_MAP
 )
@@ -25,6 +26,8 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 _LOGGER = logging.getLogger(__name__)
+
+_STALE_DATA_TTL = timedelta(hours=STALE_DATA_TTL_HOURS)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -63,37 +66,63 @@ class BicingStationCoordinator(DataUpdateCoordinator):
         super().__init__(hass=hass, logger=_LOGGER, name="Bicing Station", update_interval=timedelta(minutes=UPDATE_INTERVAL))
         self._token = token
         self._stations = stations
+        self._last_success_time: datetime | None = None
 
     async def async_config_entry_first_refresh(self) -> None:
         #self._latitude = gas_station.latitude
         #self._longitude = gas_station.longitude
         await super().async_config_entry_first_refresh()
 
+    def _cached_data_if_fresh(self, exc: Exception):
+        """Return last known data while failures are within the stale TTL."""
+        if self.data is None or self._last_success_time is None:
+            return None
+
+        age = datetime.now(timezone.utc) - self._last_success_time
+        if age >= _STALE_DATA_TTL:
+            return None
+
+        _LOGGER.warning(
+            "Error temporal obtenint dades del Bicing (%s). "
+            "Es manté l'últim estat conegut (fa %s; límit %s).",
+            exc,
+            age,
+            _STALE_DATA_TTL,
+        )
+        return self.data
+
     async def _async_update_data(self):
         try:
             status = await BikeStationApi.get_stations_status(self._token, self._stations)
-        
-        except aiohttp.ContentTypeError as exc:
-            _LOGGER.error("Error connectant-se amb l'API del Bicing. El servidor ha retornat una resposta inesperada.")
-            _LOGGER.error(exc)
-            raise UpdateFailed("Error temporal connectant-se amb l'API del Bicing (Content-Type inesperat).") from exc
-        
-        except aiohttp.ServerConnectionError as exc:
-            _LOGGER.error("Error connectant-se amb l'API del Bicing.")
-            _LOGGER.error(exc)
+
+        except (
+            aiohttp.ContentTypeError,
+            aiohttp.ServerConnectionError,
+            aiohttp.ClientConnectionError,
+            aiohttp.ServerTimeoutError,
+            TimeoutError,
+        ) as exc:
+            cached = self._cached_data_if_fresh(exc)
+            if cached is not None:
+                return cached
+
+            _LOGGER.error("Error connectant-se amb l'API del Bicing: %s", exc)
+
+            if isinstance(exc, aiohttp.ContentTypeError):
+                raise UpdateFailed(
+                    "Error temporal connectant-se amb l'API del Bicing (Content-Type inesperat)."
+                ) from exc
+            if isinstance(exc, aiohttp.ClientConnectionError) and not isinstance(
+                exc, aiohttp.ServerConnectionError
+            ):
+                raise UpdateFailed(
+                    "Error del client connectant-se amb l'API del Bicing."
+                ) from exc
+            if isinstance(exc, (aiohttp.ServerTimeoutError, TimeoutError)):
+                raise UpdateFailed("Timeout connectant-se amb l'API del Bicing.") from exc
             raise UpdateFailed("Error temporal connectant-se amb l'API del Bicing.") from exc
-        
-        except aiohttp.ClientConnectionError as exc:
-            _LOGGER.error("Error connectant-se amb l'API del Bicing. Error del client (certificats,etc.)")
-            _LOGGER.error(exc)
-            raise UpdateFailed("Error del client connectant-se amb l'API del Bicing.") from exc
-        
-        except (aiohttp.ServerTimeoutError, TimeoutError) as exc:
-            _LOGGER.error("Error connectant-se amb l'API del Bicing. Timeout.")
-            _LOGGER.error(exc)
-            raise UpdateFailed("Timeout connectant-se amb l'API del Bicing.") from exc
-        
-        
+
+        self._last_success_time = datetime.now(timezone.utc)
         _LOGGER.debug(f"Bulk update={status}")
         return status
 
@@ -118,9 +147,24 @@ class BicingStationSensor(CoordinatorEntity, SensorEntity):
         await super().async_added_to_hass()
         self._handle_coordinator_update()
 
+    @property
+    def available(self) -> bool:
+        """Prefer unknown over unavailable after prolonged API failures."""
+        # Transient failures reuse cached coordinator data (last_update_success stays
+        # True). After the stale TTL, UpdateFailed is raised and we clear the state
+        # to unknown while remaining available.
+        return True
+
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
+        if not self.coordinator.last_update_success:
+            # Prolonged failure past the stale TTL: show unknown instead of a stale value.
+            self._state = None
+            self._attrs = {}
+            self.async_write_ha_state()
+            return
+
         data = self.coordinator.data
         if data is None:
             _LOGGER.debug("No coordinator data available for station %s", self.id)

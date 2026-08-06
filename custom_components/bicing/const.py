@@ -6,4 +6,7 @@ STATION_STATUS_ENDPOINT = "https://opendata-ajuntament.barcelona.cat/data/datase
 TOKEN = "token"
 
 UPDATE_INTERVAL = 10
+# Keep last known station state during transient API failures.
+# After this period without a successful update, the entity becomes unknown.
+STALE_DATA_TTL_HOURS = 1
 CONF_STATION_IDS = "station_ids"
