@@ -2,9 +2,10 @@
   "config": {
     "abort": {
       "already_configured": "La integració ja s'ha configurat",
-      "status_error": "S'ha produït un error comunicant-se amb el servidor.",
-      "client_error": "S'ha produït un error comunicant-se amb el servidor. Error del client.",
-      "token_error": "S'ha produït un error comunicant amb l'API del Bicing. Revisar si el token és vàlid.",
+      "status_error": "S'ha produït un error temporal comunicant-se amb l'API del Bicing. Torneu-ho a provar més tard.",
+      "client_error": "S'ha produït un error del client comunicant-se amb el servidor.",
+      "token_error": "L'API del Bicing ha rebutjat el token. Reviseu que sigui vàlid.",
+      "challenge_blocked": "Open Data BCN ha bloquejat la petició amb un challenge anti-bot. Obriu {challenge_url} des d'un dispositiu amb la **mateixa IP pública** que Home Assistant, completeu el captcha i torneu-ho a provar. Si continua fallant, reinicieu el router per canviar d'IP.",
       "reauth_successful": "El token és vàlid.",
       "data_updated": "S'han desat les estacions a monitoritzar."
     },
@@ -34,7 +35,7 @@
       },
       "reauth_confirm": {
         "title": "Reconfigurar el token",
-        "description": "El token ha caducat i cal que en genereu un de nou. Podeu fer-ho des de https://opendata-ajuntament.barcelona.cat/tokens",
+        "description": "El token ha estat rebutjat i cal que en genereu un de nou. Podeu fer-ho des de https://opendata-ajuntament.barcelona.cat/tokens",
         "data": {
           "token": "Obteniu-lo a https://opendata-ajuntament.barcelona.cat/tokens"
         }
@@ -43,6 +44,28 @@
         "title": "Estacions monitoritzades",
         "data": {
           "station_ids": "Seleccioneu les estacions a monitoritzar"
+        }
+      }
+    }
+  },
+  "issues": {
+    "bot_challenge": {
+      "title": "Open Data BCN bloqueja l'accés al Bicing",
+      "description": "El portal Open Data BCN ha bloquejat Home Assistant amb un challenge anti-bot. El token pot continuar sent vàlid.\n\n**Important:** obriu [{challenge_url}]({challenge_url}) des d'un dispositiu que faci servir la **mateixa IP pública** que Home Assistant (normalment un mòbil/PC a la mateixa xarxa de casa). Completar el captcha només millora la reputació d'aquesta IP.\n\nSi Home Assistant surt amb una IP pública diferent (núvol, VPN, dades mòbils, etc.), resoldre el captcha no servirà. En aquest cas, espereu i torneu-ho a provar més tard, o reinicieu el router perquè Home Assistant obtingui una IP pública nova.\n\nQuan hàgiu completat el challenge (o canviat d'IP), obriu aquesta reparació i confirmeu per reintentar.",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Desbloquejar l'accés a Open Data BCN",
+            "description": "1. Obriu [{challenge_url}]({challenge_url}) des d'un dispositiu amb la **mateixa IP pública** que Home Assistant.\n2. Completeu el captcha.\n3. Premeu enviar a continuació per reintentar.\n\nSi continua fallant, reinicieu el router per canviar la IP pública i torneu-ho a provar."
+          }
+        },
+        "error": {
+          "challenge_still_blocked": "El portal encara bloqueja les peticions. Completeu el challenge des de la mateixa IP pública que Home Assistant, o reinicieu el router i torneu-ho a provar.",
+          "temporary_error": "S'ha produït un error temporal de l'API. Torneu-ho a provar d'aquí a uns moments.",
+          "auth_failed": "L'API ha rebutjat el token. Actualitzeu el token a la configuració de la integració."
+        },
+        "abort": {
+          "entry_not_found": "No s'ha trobat l'entrada de configuració del Bicing."
         }
       }
     }

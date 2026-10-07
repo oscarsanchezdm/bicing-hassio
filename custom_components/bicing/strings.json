@@ -20,11 +20,34 @@
     },
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
-      "status_error": "[%key:common::config_flow::abort::status_error%]",
-      "client_error": "[%key:common::config_flow::abort::client_error%]",
-      "data_updated": "[%key:common::config_flow::abort::data_updated%]",
-      "token_error": "[%key:common::config_flow::abort::token_error%]",
+      "status_error": "A temporary error occurred while contacting the Bicing API. Please try again later.",
+      "client_error": "A client error occurred while contacting the Bicing API.",
+      "data_updated": "The monitored stations have been saved.",
+      "token_error": "The Bicing API rejected the access token. Please check that the token is valid.",
+      "challenge_blocked": "Open Data BCN blocked the request with a bot challenge. Open {challenge_url} from a device that uses the same public IP address as Home Assistant, complete the captcha, then try again. If it still fails, restart your router to get a new IP.",
       "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
+    }
+  },
+  "issues": {
+    "bot_challenge": {
+      "title": "Open Data BCN is blocking Bicing access",
+      "description": "The Open Data BCN portal blocked Home Assistant with an anti-bot challenge. Your token may still be valid.\n\n**Important:** open [{challenge_url}]({challenge_url}) from a device that uses the **same public IP address** as Home Assistant (typically a phone/PC on the same home network). Completing the captcha only improves the reputation of that IP.\n\nIf Home Assistant uses a different public IP (cloud, VPN, mobile data, etc.), solving the captcha will not help. In that case, wait and retry later, or restart the router so Home Assistant gets a new public IP.\n\nAfter completing the challenge (or changing IP), open this repair and confirm to retry.",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Unblock Open Data BCN access",
+            "description": "1. Open [{challenge_url}]({challenge_url}) from a device with the **same public IP** as Home Assistant.\n2. Complete the captcha.\n3. Press submit below to retry.\n\nIf it keeps failing, restart the router to change the public IP and try again."
+          }
+        },
+        "error": {
+          "challenge_still_blocked": "The portal is still blocking requests. Complete the challenge from the same public IP as Home Assistant, or restart the router and try again.",
+          "temporary_error": "A temporary API error occurred. Please try again in a moment.",
+          "auth_failed": "The API rejected the token. Update the token in the integration settings."
+        },
+        "abort": {
+          "entry_not_found": "The Bicing configuration entry was not found."
+        }
+      }
     }
   }
 }
